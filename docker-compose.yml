@@ -1,0 +1,35 @@
+version: '3'
+
+services:
+    mongo:
+        image: mongo
+        volumes:
+            - ./data/mongo:/data/db
+
+    xhgui:
+        build:
+            context: xhgui
+
+        command: bash -c "cp -R /usr/local/src/xhgui/webroot /share && php-fpm"
+        volumes:
+            - asset-volume:/share
+            - ./conf/php.ini:/usr/local/etc/php/php.ini
+            - ./conf/www.conf:/usr/local/etc/php-fpm.d/www.conf
+            - ./conf/php-fpm.conf:/usr/local/etc/php-fpm.conf
+            - ./conf/xhgui.config.php:/usr/local/src/xhgui/config/config.php
+#            - ./xhgui-sources:/usr/local/src/xhgui
+
+    nginx:
+        image: nginx:latest
+        ports:
+            - 80:80
+        depends_on:
+            - xhgui
+        command: [nginx, '-g', 'daemon off;']
+        volumes:
+            - asset-volume:/usr/local/src/xhgui/webroot:ro
+            - ./conf/nginx.xhgui.conf:/etc/nginx/conf.d/default.conf
+            - ./conf/nginx.conf:/etc/nginx/nginx.conf
+
+volumes:
+    asset-volume:
